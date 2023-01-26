@@ -5,6 +5,7 @@ import com.unipi.alexandris.minecraftplugin.dragonrankplugin.Handlers.ConfigHand
 import com.unipi.alexandris.minecraftplugin.dragonrankplugin.Handlers.EventsHandler;
 import me.TechsCode.UltraPermissions.UltraPermissions;
 import me.TechsCode.UltraPermissions.UltraPermissionsAPI;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -15,6 +16,7 @@ public final class DragonRank extends JavaPlugin {
     public ConfigHandler config;
 
     private Player DRAGON;
+    private double[] originalAttributeValues;
 
     private UltraPermissionsAPI upAPI;
 
@@ -41,6 +43,14 @@ public final class DragonRank extends JavaPlugin {
 
     public void setDRAGON(Player DRAGON) {
         this.DRAGON = DRAGON;
+    }
+
+    public double[] getOriginalAttributeValues() {
+        return originalAttributeValues;
+    }
+
+    public void setOriginalAttributeValues(double[] originalAttributeValues) {
+        this.originalAttributeValues = originalAttributeValues;
     }
 
     public UltraPermissionsAPI getUpAPI() {

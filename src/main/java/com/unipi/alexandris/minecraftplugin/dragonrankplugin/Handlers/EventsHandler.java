@@ -9,6 +9,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
@@ -108,6 +109,7 @@ public final class EventsHandler implements Listener {
                     plugin.getServer().broadcast(component);
                 }
                 removeDragon(e.getPlayer());
+                revokePerks(e.getPlayer());
                 return true;
             }
         }
@@ -126,6 +128,7 @@ public final class EventsHandler implements Listener {
                     .append(Component.text("has given up the egg! It has returned in the END!", NamedTextColor.DARK_RED));
             plugin.getServer().broadcast(component);
             removeDragon(e.getPlayer());
+            revokePerks(e.getPlayer());
             return true;
         }
         return false;
@@ -139,6 +142,7 @@ public final class EventsHandler implements Listener {
             Player player = (Player) e.getEntity();
             plugin.setDRAGON(player);
             assignDragon(player);
+            passPerks(player);
             return true;
         }
 
@@ -169,6 +173,23 @@ public final class EventsHandler implements Listener {
             return true;
         }
         return false;
+    }
+
+    private void passPerks(Player p) {
+        double attackSpeed = p.getAttribute(Attribute.GENERIC_ATTACK_SPEED).getBaseValue();
+        double movementSpeed = p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).getBaseValue();
+        double luck = p.getAttribute(Attribute.GENERIC_LUCK).getBaseValue();
+        plugin.setOriginalAttributeValues(new double[]{attackSpeed, movementSpeed, luck});
+        p.getAttribute(Attribute.GENERIC_ATTACK_SPEED).setBaseValue(attackSpeed + attackSpeed * 0.3);
+        p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(movementSpeed + movementSpeed * 0.5);
+        p.getAttribute(Attribute.GENERIC_LUCK).setBaseValue(luck * 2);
+    }
+
+    private void revokePerks(Player p) {
+        double[] baseValues = plugin.getOriginalAttributeValues();
+        p.getAttribute(Attribute.GENERIC_ATTACK_SPEED).setBaseValue(baseValues[0]);
+        p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(baseValues[1]);
+        p.getAttribute(Attribute.GENERIC_LUCK).setBaseValue(baseValues[2]);
     }
 
     private void assignDragon(Player p) {
