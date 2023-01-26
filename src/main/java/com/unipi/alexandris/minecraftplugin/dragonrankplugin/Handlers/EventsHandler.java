@@ -44,31 +44,25 @@ public final class EventsHandler implements Listener {
     }
 
     @EventHandler
-    public boolean onDragonEggMove(InventoryClickEvent e) {
+    public void onDragonEggMove(InventoryClickEvent e) {
         try {
             if (Arrays.stream(Inventories).toList().contains((e.getInventory().getType())))
                 if (e.getCurrentItem().getType() == Material.DRAGON_EGG) {
                     e.setCancelled(true);
-                    return true;
                 }
-            return false;
         }
-        catch(NullPointerException ex) {
-            return false;
-        }
+        catch(NullPointerException ignored) {}
     }
 
     @EventHandler
-    public boolean onDragonEggPlace(BlockPlaceEvent e) {
+    public void onDragonEggPlace(BlockPlaceEvent e) {
         if(e.getBlock().getType() == Material.DRAGON_EGG) {
             e.setCancelled(true);
-            return true;
         }
-        return false;
     }
 
     @EventHandler
-    public boolean onDragonEggDespawn(ItemDespawnEvent e) {
+    public void onDragonEggDespawn(ItemDespawnEvent e) {
         if(e.getEntity().getType() == EntityType.DROPPED_ITEM) {
             if (e.getEntity().getItemStack().getType() == Material.DRAGON_EGG) {
                 Location loc = plugin.config.getLocation();
@@ -76,11 +70,9 @@ public final class EventsHandler implements Listener {
                 TextComponent component = prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
                         .append(Component.text("DRAGON EGG ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
                         .append(Component.text("has respawned in the END!", NamedTextColor.DARK_RED));
-                plugin.getServer().broadcast(component);
-                return true;
+                plugin.getServer().broadcast(component,  ".info");
             }
         }
-        return false;
     }
 
     @EventHandler
@@ -95,7 +87,7 @@ public final class EventsHandler implements Listener {
     }
 
     @EventHandler
-    public boolean onDragonEggDropByDeath(PlayerDeathEvent e) {
+    public void onDragonEggDropByDeath(PlayerDeathEvent e) {
         for(ItemStack is : e.getDrops()) {
             if(is.getType() == Material.DRAGON_EGG) {
                 plugin.setDRAGON(null);
@@ -106,18 +98,17 @@ public final class EventsHandler implements Listener {
                     TextComponent component = prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
                             .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
                             .append(Component.text("was defeated in the END! The egg was thus summoned back.", NamedTextColor.DARK_RED));
-                    plugin.getServer().broadcast(component);
+                    plugin.getServer().broadcast(component, ".info");
+
                 }
                 removeDragon(e.getPlayer());
                 revokePerks(e.getPlayer());
-                return true;
             }
         }
-        return false;
     }
 
     @EventHandler
-    public boolean OnDragonEggDropByChoice(PlayerDropItemEvent e) {
+    public void OnDragonEggDropByChoice(PlayerDropItemEvent e) {
         if(e.getItemDrop().getItemStack().getType() == Material.DRAGON_EGG) {
             e.getItemDrop().remove();
             Location loc = plugin.config.getLocation();
@@ -126,16 +117,14 @@ public final class EventsHandler implements Listener {
             TextComponent component = prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
                     .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
                     .append(Component.text("has given up the egg! It has returned in the END!", NamedTextColor.DARK_RED));
-            plugin.getServer().broadcast(component);
+            plugin.getServer().broadcast(component,  ".info");
             removeDragon(e.getPlayer());
             revokePerks(e.getPlayer());
-            return true;
         }
-        return false;
     }
 
     @EventHandler
-    public boolean onDragonEggPlayerPickup(EntityPickupItemEvent e) {
+    public void onDragonEggPlayerPickup(EntityPickupItemEvent e) {
         if(e.getItem().getItemStack().getType() == Material.DRAGON_EGG) {
             if(!(e.getEntity() instanceof Player)) e.setCancelled(true);
 
@@ -143,23 +132,18 @@ public final class EventsHandler implements Listener {
             plugin.setDRAGON(player);
             assignDragon(player);
             passPerks(player);
-            return true;
         }
-
-        return false;
     }
 
     @EventHandler
-    public boolean onDragonEggPickup(InventoryPickupItemEvent e) {
+    public void onDragonEggPickup(InventoryPickupItemEvent e) {
         if(e.getItem().getItemStack().getType() == Material.DRAGON_EGG) {
             if(Arrays.stream(Inventories).toList().contains((e.getInventory().getType()))) e.setCancelled(true);
-            return true;
         }
-        return false;
     }
 
     @EventHandler
-    public boolean onDragonKeeperTravel(PlayerChangedWorldEvent e) {
+    public void onDragonKeeperTravel(PlayerChangedWorldEvent e) {
         if(e.getPlayer() == plugin.getDRAGON()) {
             String world = "OVER WORLD!";
             if(e.getPlayer().getWorld().getName().equals("world_nether"))
@@ -169,10 +153,8 @@ public final class EventsHandler implements Listener {
             TextComponent component = prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
                     .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
                     .append(Component.text("has escaped to the " + world, NamedTextColor.DARK_RED));
-            plugin.getServer().broadcast(component);
-            return true;
+            plugin.getServer().broadcast(component,  ".info");
         }
-        return false;
     }
 
     private void passPerks(Player p) {
@@ -183,6 +165,7 @@ public final class EventsHandler implements Listener {
         p.getAttribute(Attribute.GENERIC_ATTACK_SPEED).setBaseValue(attackSpeed + attackSpeed * 0.3);
         p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(movementSpeed + movementSpeed * 0.5);
         p.getAttribute(Attribute.GENERIC_LUCK).setBaseValue(luck * 2);
+        //TODO - see what's wrong with attribute assignment
     }
 
     private void revokePerks(Player p) {
@@ -195,9 +178,9 @@ public final class EventsHandler implements Listener {
     private void assignDragon(Player p) {
         if(plugin.getUpAPI() == null) plugin.setUpAPI(UltraPermissions.getAPI());
         Optional<User> user = plugin.getUpAPI().getUsers().uuid(p.getUniqueId());
-        user.ifPresent(value -> value.setPrefix("&8<{#4d0057>}D{#4d0057<}{#46004f>}r{#46004f<}{#3f0047>}a{#3f0047<}{#38003f>}g{#38003f<}{#310037>}o{#310037<}{#2a002f>}n{#2a002f<}&8>&r"));
+        user.ifPresent(value -> value.setPrefix("&8<&l{#4d0057>}D{#4d0057<}{#46004f>}r{#46004f<}{#3f0047>}a{#3f0047<}{#38003f>}g{#38003f<}{#310037>}o{#310037<}{#2a002f>}n{#2a002f<}{#230028>}K{#230028<}{#1c0020>}e{#1c0020<}{#150018>}e{#150018<}{#0e0010>}p{#0e0010<}{#070008>}e{#070008<}{#000000>}r{#000000<}&8>&r"));
         user.ifPresent(value -> value.setSuffix("&8<{#4d0057>}D{#4d0057<}{#46004f>}r{#46004f<}{#3f0047>}a{#3f0047<}{#38003f>}g{#38003f<}{#310037>}o{#310037<}{#2a002f>}n{#2a002f<}&8>&r"));
-
+        //TODO - change the prefix and suffix colors
     }
 
     private void removeDragon(Player p) {
