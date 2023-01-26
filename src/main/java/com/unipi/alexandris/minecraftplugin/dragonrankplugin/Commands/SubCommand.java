@@ -1,4 +1,4 @@
-package com.unipi.alexandris.minecraftplugintemplate.loremipsum.Commands;
+package com.unipi.alexandris.minecraftplugin.dragonrankplugin.Commands;
 
 
 import org.bukkit.command.CommandSender;

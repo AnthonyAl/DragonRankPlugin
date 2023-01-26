@@ -1,2 +1,2 @@
-# LoremIpsum
-Donec eget magna venenatis, pulvinar magna sed, faucibus augue.
+# DragonRankPlugin
+A plugin implementing a Dragon Egg Tag Game with the help of UltraPermissions.

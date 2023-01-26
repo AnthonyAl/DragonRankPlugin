@@ -1,16 +1,20 @@
-name: LoremIpsum
+name: DragonTag
 version: '${project.version}'
-main: com.unipi.alexandris.minecraftplugintemplate.loremipsum.LoremIpsum
-api-version: 1.18
+main: com.unipi.alexandris.minecraftplugin.dragonrankplugin.DragonRank
+api-version: 1.19
 authors: [ Antitonius ]
-description: Donec eget magna venenatis, pulvinar magna sed, faucibus augue.
+description: A plugin implementing a Dragon Egg Tag Game with the help of UltraPermissions.
 website: https://anthonyal.github.io
+## This is required.
+load: POSTWORLD
+depend:
+  - UltraPermissions
 commands:
-  lorem:
-    description: Command group for LoremIpsum.
-    aliases: lo
-    permission: lorem
+  dragon_keeper:
+    description: Command group for Dragon Keeper.
+    aliases: dk
+    permission: dragon_keeper
 permissions:
-  lorem:
-    description: Access to all LoremIpsum commands.
+  dragon_keeper:
+    description: Access to all Dragon Keeper commands.
     default: op

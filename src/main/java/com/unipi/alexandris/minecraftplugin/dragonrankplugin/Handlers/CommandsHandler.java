@@ -1,9 +1,9 @@
-package com.unipi.alexandris.minecraftplugintemplate.loremipsum.Handlers;
+package com.unipi.alexandris.minecraftplugin.dragonrankplugin.Handlers;
 
-import com.unipi.alexandris.minecraftplugintemplate.loremipsum.LoremIpsum;
-import com.unipi.alexandris.minecraftplugintemplate.loremipsum.Commands.HelpCmd;
-import com.unipi.alexandris.minecraftplugintemplate.loremipsum.Commands.ReloadCmd;
-import com.unipi.alexandris.minecraftplugintemplate.loremipsum.Commands.SubCommand;
+import com.unipi.alexandris.minecraftplugin.dragonrankplugin.DragonRank;
+import com.unipi.alexandris.minecraftplugin.dragonrankplugin.Commands.HelpCmd;
+import com.unipi.alexandris.minecraftplugin.dragonrankplugin.Commands.ReloadCmd;
+import com.unipi.alexandris.minecraftplugin.dragonrankplugin.Commands.SubCommand;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -18,7 +18,7 @@ public final class CommandsHandler implements TabExecutor {
 
     private final HashMap<String, SubCommand> commands = new HashMap<>();
 
-    public CommandsHandler(LoremIpsum plugin) {
+    public CommandsHandler(DragonRank plugin) {
         commands.put("help", new HelpCmd(this));
         commands.put("reload", new ReloadCmd(plugin));
     }
@@ -26,16 +26,16 @@ public final class CommandsHandler implements TabExecutor {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage(ChatColor.AQUA + "Lorem ipsum" + ChatColor.GRAY + " dolor sit amet, consectetur adipiscing elit." +
-                    "Vestibulum quis nulla viverra, volutpat quam nec, consectetur erat. To check the help page, type "
-                    + ChatColor.YELLOW + "/lorem help" + ChatColor.GRAY + ".");
+            sender.sendMessage(ChatColor.AQUA + "Dragon Keeper Rank" + ChatColor.GRAY + " is a plugin developed by Antitonius" +
+                    "to implement settings for a Dragon Egg Keeper Rank. The plugin was developed for play.theNRK.net. To check the help page, type "
+                    + ChatColor.YELLOW + "/dragon_keeper help" + ChatColor.GRAY + ".");
             return true;
         }
 
         SubCommand command = commands.get(args[0].toLowerCase());
 
         if (command == null) {
-            sender.sendMessage(ChatColor.RED + "Unknown command. To check out the help page, type " + ChatColor.GRAY + "/lorem help" + ChatColor.RED + ".");
+            sender.sendMessage(ChatColor.RED + "Unknown command. To check out the help page, type " + ChatColor.GRAY + "/dragon_keeper help" + ChatColor.RED + ".");
             return true;
         }
 
@@ -48,7 +48,7 @@ public final class CommandsHandler implements TabExecutor {
         System.arraycopy(args, 1, subCmdArgs, 0, subCmdArgs.length);
 
         if (!command.onCommand(sender, subCmdArgs)) {
-            sender.sendMessage(ChatColor.RED + "Command usage: /lorem " + ChatColor.GRAY + command.getUsage() + ChatColor.RED + ".");
+            sender.sendMessage(ChatColor.RED + "Command usage: /dragon_keeper " + ChatColor.GRAY + command.getUsage() + ChatColor.RED + ".");
         }
 
         return true;

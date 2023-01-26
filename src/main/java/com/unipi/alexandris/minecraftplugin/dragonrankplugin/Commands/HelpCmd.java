@@ -1,6 +1,6 @@
-package com.unipi.alexandris.minecraftplugintemplate.loremipsum.Commands;
+package com.unipi.alexandris.minecraftplugin.dragonrankplugin.Commands;
 
-import com.unipi.alexandris.minecraftplugintemplate.loremipsum.Handlers.CommandsHandler;
+import com.unipi.alexandris.minecraftplugin.dragonrankplugin.Handlers.CommandsHandler;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -25,7 +25,7 @@ public class HelpCmd implements SubCommand {
                 continue;
             }
 
-            sender.sendMessage(ChatColor.GRAY + "  -" + ChatColor.AQUA + "/lorem " + cmd.getUsage() + ChatColor.GRAY + " - " + cmd.getDescription());
+            sender.sendMessage(ChatColor.GRAY + "  -" + ChatColor.AQUA + "/dragon_keeper " + cmd.getUsage() + ChatColor.GRAY + " - " + cmd.getDescription());
         }
 
         return true;

@@ -4,16 +4,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.unipi.alexandris.minecraftplugintemplate</groupId>
-    <artifactId>LoremIpsum</artifactId>
-    <version>1.0-TEMPLATE</version>
+    <groupId>com.unipi.alexandris.minecraftplugin.dragonrankplugin</groupId>
+    <artifactId>DragonKeeper</artifactId>
+    <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>LoremIpsum</name>
+    <name>DragonKeeper</name>
 
-    <description>Donec eget magna venenatis, pulvinar magna sed, faucibus augue.</description>
+    <description>A plugin implementing a Dragon Egg Tag Game with the help of UltraPermissions.</description>
     <properties>
-        <java.version>17</java.version>
+        <java.version>16</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <url>https://anthonyal.github.io</url>
@@ -63,6 +63,12 @@
             <id>sonatype</id>
             <url>https://oss.sonatype.org/content/groups/public/</url>
         </repository>
+
+
+        <repository>
+            <id>techscode</id>
+            <url>https://repo.techscode.com/repository/maven-releases/</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -70,7 +76,14 @@
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
-            <version>1.18.2-R0.1-SNAPSHOT</version>
+            <version>1.19.2-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>me.TechsCode</groupId>
+            <artifactId>UltraPermissionsAPI</artifactId>
+            <version>1.0.0</version>
             <scope>provided</scope>
         </dependency>
 

@@ -1,2 +1,9 @@
-#Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-lorem: True
+#Placeholder config for future implementation.
+dragon_keeper: True
+#Provide the plugin with the world name for egg respawn.
+world_name: "world_the_end"
+#Provide the plugin with the location for egg respawn.
+egg_location:
+  - 0
+  - 66
+  - 0
