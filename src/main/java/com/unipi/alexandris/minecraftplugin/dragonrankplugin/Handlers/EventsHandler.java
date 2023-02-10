@@ -7,37 +7,56 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityPickupItemEvent;
-import org.bukkit.event.entity.ItemDespawnEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
-import java.util.Arrays;
+import java.util.InputMismatchException;
 import java.util.Optional;
+import java.util.Random;
 
 public final class EventsHandler implements Listener {
 
     private final DragonRank plugin;
-    private final InventoryType[] Inventories = {InventoryType.ANVIL, InventoryType.BARREL, InventoryType.BEACON, InventoryType.BREWING, InventoryType.BLAST_FURNACE, InventoryType.CARTOGRAPHY, InventoryType.CHEST, InventoryType.COMPOSTER, InventoryType.DISPENSER, InventoryType.DROPPER, InventoryType.ENCHANTING, InventoryType.ENDER_CHEST, InventoryType.FURNACE, InventoryType.GRINDSTONE, InventoryType.HOPPER, InventoryType.LECTERN, InventoryType.LOOM, InventoryType.MERCHANT, InventoryType.SHULKER_BOX, InventoryType.SMITHING, InventoryType.SMOKER, InventoryType.STONECUTTER};
 
-    private final TextComponent prefix = Component.text("[", NamedTextColor.GOLD)
+    private final TextComponent component_prefix = Component.text("[", NamedTextColor.GOLD)
             .append(Component.text("Broadcast", NamedTextColor.DARK_RED))
             .append(Component.text("] ", NamedTextColor.GOLD));
+
+    private final TextComponent component_generic_lost = component_prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
+            .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
+            .append(Component.text("has lost the egg! It must have returned to the END!", NamedTextColor.DARK_RED));
+
+    private final TextComponent component_egg_despawn = component_prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
+            .append(Component.text("DRAGON EGG ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
+            .append(Component.text("is obtainable in the END!", NamedTextColor.DARK_RED));
+
+    private final TextComponent component_lost_natural = component_prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
+            .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
+            .append(Component.text("has perished! The egg was thus summoned back to the End.", NamedTextColor.DARK_RED));
+
+    private final TextComponent component_dropped = component_prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
+            .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
+            .append(Component.text("has given up the egg! It has returned in the END!", NamedTextColor.DARK_RED));
+
 
     public EventsHandler(DragonRank plugin) {
         this.plugin = plugin;
@@ -46,12 +65,56 @@ public final class EventsHandler implements Listener {
     @EventHandler
     public void onDragonEggMove(InventoryClickEvent e) {
         try {
-            if (Arrays.stream(Inventories).toList().contains((e.getInventory().getType())))
+            if (e.getInventory().getType() != InventoryType.PLAYER &&
+                e.getInventory().getType() != InventoryType.CREATIVE)
                 if (e.getCurrentItem().getType() == Material.DRAGON_EGG) {
                     e.setCancelled(true);
                 }
+            if(e.getInventory().getHolder() instanceof Player p) {
+                if(p.getInventory().getItemInOffHand().getType() == Material.DRAGON_EGG) {
+                    e.setCancelled(true);
+                }
+            }
         }
         catch(NullPointerException ignored) {}
+    }
+
+    @EventHandler
+    public void inventoryOpenChecker(InventoryOpenEvent e) {
+        if (e.getPlayer().getInventory().getItemInOffHand().getType() == Material.DRAGON_EGG) {
+            e.setCancelled(true);
+        }
+        if(e.getPlayer().getEnderChest().contains(Material.DRAGON_EGG)) {
+            e.getPlayer().getEnderChest().remove(Material.DRAGON_EGG);
+
+            Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component_generic_lost));
+
+            try {
+                DRAGON_CLEAR((Player) e.getPlayer());
+            } catch (InputMismatchException ignored) {
+                if(plugin.config.isPlace_crystals()) fountain_crystallize();
+            }
+        }
+        if(!e.getPlayer().getInventory().contains(Material.DRAGON_EGG)) {
+
+            Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component_generic_lost));
+
+            try {
+                DRAGON_CLEAR((Player) e.getPlayer());
+            } catch (InputMismatchException ignored) {
+                if(plugin.config.isPlace_crystals()) fountain_crystallize();
+            }
+        }
+    }
+
+    @EventHandler
+    public void interactChecker(PlayerInteractEvent e) {
+        if(plugin.getDRAGON() == null) return;
+        if(plugin.getDRAGON().equals(e.getPlayer())) {
+            if(!e.getPlayer().getInventory().contains(Material.DRAGON_EGG)) {
+                DRAGON_CLEAR(e.getPlayer());
+            }
+        }
     }
 
     @EventHandler
@@ -62,15 +125,20 @@ public final class EventsHandler implements Listener {
     }
 
     @EventHandler
+    public void onDragonEggRightClick(PlayerInteractEvent e) {
+        if(e.getItem().getType() == Material.DRAGON_EGG) {
+            e.setCancelled(true);
+        }
+    }
+
+    @EventHandler
     public void onDragonEggDespawn(ItemDespawnEvent e) {
         if(e.getEntity().getType() == EntityType.DROPPED_ITEM) {
             if (e.getEntity().getItemStack().getType() == Material.DRAGON_EGG) {
-                Location loc = plugin.config.getLocation();
-                loc.getBlock().setType(Material.DRAGON_EGG);
-                TextComponent component = prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
-                        .append(Component.text("DRAGON EGG ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
-                        .append(Component.text("has respawned in the END!", NamedTextColor.DARK_RED));
-                plugin.getServer().broadcast(component,  ".info");
+
+                Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component_egg_despawn));
+
+                if(plugin.config.isPlace_crystals()) fountain_crystallize();
             }
         }
     }
@@ -90,36 +158,32 @@ public final class EventsHandler implements Listener {
     public void onDragonEggDropByDeath(PlayerDeathEvent e) {
         for(ItemStack is : e.getDrops()) {
             if(is.getType() == Material.DRAGON_EGG) {
-                plugin.setDRAGON(null);
-                if(e.getPlayer().getWorld() == plugin.config.getWorld()) {
-                    e.getDrops().remove(is);
-                    Location loc = plugin.config.getLocation();
-                    loc.getBlock().setType(Material.DRAGON_EGG);
-                    TextComponent component = prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
-                            .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
-                            .append(Component.text("was defeated in the END! The egg was thus summoned back.", NamedTextColor.DARK_RED));
-                    plugin.getServer().broadcast(component, ".info");
 
-                }
-                removeDragon(e.getPlayer());
-                revokePerks(e.getPlayer());
+                if(!plugin.config.isEgg_drop()) e.getDrops().remove(is);
+
+                Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component_lost_natural));
+
+                DRAGON_CLEAR(e.getPlayer());
             }
         }
     }
 
     @EventHandler
-    public void OnDragonEggDropByChoice(PlayerDropItemEvent e) {
+    public void onDragonEggDropByChoice(PlayerDropItemEvent e) {
         if(e.getItemDrop().getItemStack().getType() == Material.DRAGON_EGG) {
-            e.getItemDrop().remove();
+            if(!plugin.config.isEgg_drop()) e.getItemDrop().remove();
+
+            Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component_dropped));
+
+            DRAGON_CLEAR(e.getPlayer());
+        }
+    }
+
+    @EventHandler
+    public void onEnderDragonDeath(EntityDeathEvent e) {
+        if(plugin.getDRAGON() == null && e.getEntity() instanceof EnderDragon && !plugin.config.isEgg_drop()) {
             Location loc = plugin.config.getLocation();
             loc.getBlock().setType(Material.DRAGON_EGG);
-            plugin.setDRAGON(null);
-            TextComponent component = prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
-                    .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
-                    .append(Component.text("has given up the egg! It has returned in the END!", NamedTextColor.DARK_RED));
-            plugin.getServer().broadcast(component,  ".info");
-            removeDragon(e.getPlayer());
-            revokePerks(e.getPlayer());
         }
     }
 
@@ -129,65 +193,105 @@ public final class EventsHandler implements Listener {
             if(!(e.getEntity() instanceof Player)) e.setCancelled(true);
 
             Player player = (Player) e.getEntity();
-            plugin.setDRAGON(player);
-            assignDragon(player);
-            passPerks(player);
+
+            TextComponent component = component_prefix.append(Component.text(player.getName() + " has awakened as the ", NamedTextColor.DARK_RED))
+                    .append(Component.text("DRAGON KEEPER!").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true));
+            Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component));
+
+            DRAGON_REASSIGN(player);
         }
     }
 
     @EventHandler
     public void onDragonEggPickup(InventoryPickupItemEvent e) {
         if(e.getItem().getItemStack().getType() == Material.DRAGON_EGG) {
-            if(Arrays.stream(Inventories).toList().contains((e.getInventory().getType()))) e.setCancelled(true);
+            if (e.getInventory().getType() != InventoryType.PLAYER &&
+                    e.getInventory().getType() != InventoryType.CREATIVE) e.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onDragonKeeperTravel(PlayerChangedWorldEvent e) {
         if(e.getPlayer() == plugin.getDRAGON()) {
-            String world = "OVER WORLD!";
+            String world = "OVER WORLD";
             if(e.getPlayer().getWorld().getName().equals("world_nether"))
-                world = "NETHER DIMENSION!";
-            if(e.getPlayer().getWorld().getName().equals("world_the_nether"))
-                world = "END DIMENSION!";
-            TextComponent component = prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
+                world = "NETHER DIMENSION";
+            if(e.getPlayer().getWorld().getName().equals("world_the_end"))
+                world = "END DIMENSION";
+
+            String loc = ", over 25 thousand blocks away from center!";
+            if(e.getPlayer().getLocation().getX() <= 25000 &&
+                    e.getPlayer().getLocation().getZ() <= 25000)
+                loc = ", within 25 thousand blocks away from center!";
+            if(!plugin.config.isSpoil_location()) loc = "!";
+
+            TextComponent component = component_prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
                     .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
-                    .append(Component.text("has escaped to the " + world, NamedTextColor.DARK_RED));
-            plugin.getServer().broadcast(component,  ".info");
+                    .append(Component.text("has escaped to the " + world + loc, NamedTextColor.DARK_RED));
+            if(plugin.config.isSpoil_world()) Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component));
         }
     }
 
+
+
+    private void DRAGON_CLEAR(Player player) {
+        revokePerks(player);
+        removeDragon(player);
+
+        if(plugin.config.isPlace_crystals()) fountain_crystallize();
+    }
+
+    private void DRAGON_REASSIGN(Player player) {
+        if(plugin.getDRAGON() != null) {
+            revokePerks(player);
+            removeDragon(player);
+        }
+        passPerks(player);
+        assignDragon(player);
+    }
+
+
+    private void fountain_crystallize() {
+        Random r = new Random();
+        Location base_loc = plugin.config.getLocation();
+        Location crys1 = new Location(base_loc.getWorld(), base_loc.getX(), base_loc.getY() - 3, base_loc.getZ() + 3);
+        Location crys2 = new Location(base_loc.getWorld(), base_loc.getX(), base_loc.getY() - 3, base_loc.getZ() - 3);
+        Location crys3 = new Location(base_loc.getWorld(), base_loc.getX() + 3, base_loc.getY() - 3, base_loc.getZ());
+
+        if(r.nextInt(100) < 65) crys1.getBlock().setType(Material.END_CRYSTAL);
+        if(r.nextInt(100) < 35) crys2.getBlock().setType(Material.END_CRYSTAL);
+        if(r.nextInt(100) < 5) crys3.getBlock().setType(Material.END_CRYSTAL);
+    }
+
     private void passPerks(Player p) {
-        double attackSpeed = p.getAttribute(Attribute.GENERIC_ATTACK_SPEED).getBaseValue();
-        double movementSpeed = p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).getBaseValue();
-        double luck = p.getAttribute(Attribute.GENERIC_LUCK).getBaseValue();
-        plugin.setOriginalAttributeValues(new double[]{attackSpeed, movementSpeed, luck});
-        p.getAttribute(Attribute.GENERIC_ATTACK_SPEED).setBaseValue(attackSpeed + attackSpeed * 0.3);
-        p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(movementSpeed + movementSpeed * 0.5);
-        p.getAttribute(Attribute.GENERIC_LUCK).setBaseValue(luck * 2);
-        //TODO - see what's wrong with attribute assignment
+        for(PotionEffectType type : plugin.config.getEffects().keySet()) {
+            if(plugin.config.getEffects().get(type) > 0)
+                p.addPotionEffect(new PotionEffect(type, Integer.MAX_VALUE, plugin.config.getEffects().get(type) -1, false, false));
+        }
+
+
     }
 
     private void revokePerks(Player p) {
-        double[] baseValues = plugin.getOriginalAttributeValues();
-        p.getAttribute(Attribute.GENERIC_ATTACK_SPEED).setBaseValue(baseValues[0]);
-        p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(baseValues[1]);
-        p.getAttribute(Attribute.GENERIC_LUCK).setBaseValue(baseValues[2]);
+       for(PotionEffectType type : plugin.config.getEffects().keySet()) p.removePotionEffect(type);
     }
 
-    private void assignDragon(Player p) {
+    private void assignDragon(Player player) {
         if(plugin.getUpAPI() == null) plugin.setUpAPI(UltraPermissions.getAPI());
-        Optional<User> user = plugin.getUpAPI().getUsers().uuid(p.getUniqueId());
-        user.ifPresent(value -> value.setPrefix("&8<&l{#4d0057>}D{#4d0057<}{#46004f>}r{#46004f<}{#3f0047>}a{#3f0047<}{#38003f>}g{#38003f<}{#310037>}o{#310037<}{#2a002f>}n{#2a002f<}{#230028>}K{#230028<}{#1c0020>}e{#1c0020<}{#150018>}e{#150018<}{#0e0010>}p{#0e0010<}{#070008>}e{#070008<}{#000000>}r{#000000<}&8>&r"));
-        user.ifPresent(value -> value.setSuffix("&8<{#4d0057>}D{#4d0057<}{#46004f>}r{#46004f<}{#3f0047>}a{#3f0047<}{#38003f>}g{#38003f<}{#310037>}o{#310037<}{#2a002f>}n{#2a002f<}&8>&r"));
-        //TODO - change the prefix and suffix colors
+        Optional<User> user = plugin.getUpAPI().getUsers().uuid(player.getUniqueId());
+        user.ifPresent(value -> value.setPrefix("&8<&r{#4d0057>}D{#4d0057<}{#480053>}r{#480053<}{#42014f>}a{#42014f<}{#3d014c>}g{#3d014c<}{#380248>}o{#380248<}{#320244>}n{#320244<}{#2d0340>}K{#2d0340<}{#27033c>}e{#27033c<}{#220438>}e{#220438<}{#1d0435>}p{#1d0435<}{#170531>}e{#170531<}{#12052d>}r{#12052d<}&8>&r"));
+        user.ifPresent(value -> value.setSuffix("&8<&r{#4d0057>}D{#4d0057<}{#480053>}r{#480053<}{#42014f>}a{#42014f<}{#3d014c>}g{#3d014c<}{#380248>}o{#380248<}{#320244>}n{#320244<}&8>"));
+
+        plugin.setDRAGON(player);
     }
 
-    private void removeDragon(Player p) {
+    private void removeDragon(Player player) {
         if(plugin.getUpAPI() == null) plugin.setUpAPI(UltraPermissions.getAPI());
-        Optional<User> user = plugin.getUpAPI().getUsers().uuid(p.getUniqueId());
+        Optional<User> user = plugin.getUpAPI().getUsers().uuid(player.getUniqueId());
         user.ifPresent(value -> value.setPrefix(null));
         user.ifPresent(value -> value.setSuffix(null));
+
+        plugin.setDRAGON(null);
     }
 
 }

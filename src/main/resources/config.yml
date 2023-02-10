@@ -1,9 +1,33 @@
 #Placeholder config for future implementation.
 dragon_keeper: True
+
 #Provide the plugin with the world name for egg respawn.
 world_name: "world_the_end"
-#Provide the plugin with the location for egg respawn.
+
+#Provide the plugin with the location for egg respawn (usually end fountain).
 egg_location:
   - 0
   - 66
   - 0
+
+#Decides whether egg drops upon death or resets dragon fight.
+egg_drop: False
+
+#Decides whether crystals will be placed in the end fountain (ONLY enable this if egg_location is set to the end fountain).
+place_crystals: True
+
+#Decides whether a broadcast will be issued whenever Dragon Keeper changes worlds.
+spoil_world: True
+
+#Decides whether the location of the Dragon Keeper will be broadcast when changing worlds.
+spoil_location: True
+
+
+#Multipliers for the effects granted to the Dragon Keeper.
+
+#accepted effects: strength, speed, haste, jump, regen, resist, fire_resist, water_breath, night_vision, luck, fatigue, weakness, blindness
+effects:
+  #example -> luck: 5 -> equals to a luck effect of level 5.
+  luck: 5
+  haste: 2
+  speed: 3
