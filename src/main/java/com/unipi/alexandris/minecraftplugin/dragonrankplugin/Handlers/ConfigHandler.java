@@ -8,8 +8,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 @SuppressWarnings("unused")
 public final class ConfigHandler {
@@ -29,6 +28,19 @@ public final class ConfigHandler {
         config.setPlace_crystals(fileConfiguration.getBoolean("place_crystals"));
         config.setSpoil_world(fileConfiguration.getBoolean("spoil_world"));
         config.setSpoil_location(fileConfiguration.getBoolean("spoil_location"));
+
+        List<Integer> borders = new ArrayList<>();
+        String[] temp = (String[]) fileConfiguration.getList("spoil_location.borders").toArray();
+        for(String s : temp) {
+            try {
+                int i = Integer.parseInt(s);
+                borders.add(i);
+            }
+            catch(NumberFormatException ignored) {}
+        }
+        borders.sort(Collections.reverseOrder());
+
+        config.setBorders(borders);
 
         int amplifier;
         if(fileConfiguration.contains("effects.strength")) {
@@ -153,8 +165,8 @@ public final class ConfigHandler {
             for(PotionEffectType type : effects.keySet()) {
                 plugin.getDRAGON().removePotionEffect(type);
 
-                if(effects.get(type) > 0)
-                    plugin.getDRAGON().addPotionEffect(new PotionEffect(type, Integer.MAX_VALUE, effects.get(type) -1, false, false));
+                if(effects.get(type) > -1)
+                    plugin.getDRAGON().addPotionEffect(new PotionEffect(type, Integer.MAX_VALUE, effects.get(type), false, false));
             }
         }
     }
@@ -198,6 +210,11 @@ public final class ConfigHandler {
 
     public boolean isSpoil_location() {
         return config.isSpoil_location();
+    }
+
+
+    public List<Integer> getBorders() {
+        return config.getBorders();
     }
 
     public boolean isEgg_drop() {

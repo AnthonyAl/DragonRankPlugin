@@ -3,11 +3,14 @@ package com.unipi.alexandris.minecraftplugin.dragonrankplugin.Core;
 import org.bukkit.Location;
 import org.bukkit.World;
 
+import java.util.List;
+
 public class Config {
 
     private boolean void_protection;
     private boolean spoil_world;
     private boolean spoil_location;
+    private List<Integer> borders;
     private boolean egg_drop;
     private boolean place_crystals;
     private World world;
@@ -48,6 +51,14 @@ public class Config {
 
     public void setSpoil_location(boolean spoil_location) {
         this.spoil_location = spoil_location;
+    }
+
+    public List<Integer> getBorders() {
+        return borders;
+    }
+
+    public void setBorders(List<Integer> borders) {
+        this.borders = borders;
     }
 
     public boolean isEgg_drop() {

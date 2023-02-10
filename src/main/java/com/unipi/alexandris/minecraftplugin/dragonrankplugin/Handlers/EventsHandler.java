@@ -28,6 +28,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
@@ -40,17 +41,17 @@ public final class EventsHandler implements Listener {
             .append(Component.text("Broadcast", NamedTextColor.DARK_RED))
             .append(Component.text("] ", NamedTextColor.GOLD));
 
-    private final TextComponent component_egg_despawn = component_prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
-            .append(Component.text("DRAGON EGG ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
-            .append(Component.text("is obtainable in the END!", NamedTextColor.DARK_RED));
+    private final TextComponent component_egg_despawn = component_prefix.append(Component.text("The ", NamedTextColor.RED))
+            .append(Component.text("DRAGON EGG ").color(NamedTextColor.DARK_PURPLE).decoration(TextDecoration.BOLD, true))
+            .append(Component.text("is obtainable in the END!", NamedTextColor.RED));
 
-    private final TextComponent component_lost_natural = component_prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
-            .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
-            .append(Component.text("has perished! The egg was thus summoned back to the End.", NamedTextColor.DARK_RED));
+    private final TextComponent component_lost_natural = component_prefix.append(Component.text("The ", NamedTextColor.RED))
+            .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.DARK_PURPLE).decoration(TextDecoration.BOLD, true))
+            .append(Component.text("has perished! The egg was thus summoned back to the End.", NamedTextColor.RED));
 
-    private final TextComponent component_dropped = component_prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
-            .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
-            .append(Component.text("has given up the egg! It has returned in the END!", NamedTextColor.DARK_RED));
+    private final TextComponent component_dropped = component_prefix.append(Component.text("The ", NamedTextColor.RED))
+            .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.DARK_PURPLE).decoration(TextDecoration.BOLD, true))
+            .append(Component.text("has given up the egg! It has returned in the END!", NamedTextColor.RED));
 
 
     public EventsHandler(DragonRank plugin) {
@@ -85,15 +86,19 @@ public final class EventsHandler implements Listener {
                     }
                 }
             }
-        }.runTaskTimer(plugin, 0, 60);
+        }.runTaskTimer(plugin, 0, 40);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onDragonEggMove(InventoryClickEvent e) {
+        if(e.getWhoClicked() instanceof Player p)
+            if(p.hasPermission("op")) return;
         try {
             if (e.getCurrentItem().getType() == Material.DRAGON_EGG) {
-                if(e.getAction() != InventoryAction.DROP_ONE_SLOT)
+                if(e.getAction() != InventoryAction.DROP_ONE_SLOT) {
+                    if(e.getWhoClicked() instanceof Player p) passPerks(p);
                     e.setCancelled(true);
+                }
             }
             if(e.getInventory().contains(Material.DRAGON_EGG))
                 if(e.getWhoClicked() instanceof Player p) {
@@ -212,8 +217,8 @@ public final class EventsHandler implements Listener {
                 player.getInventory().setItem(9, new ItemStack(Material.DRAGON_EGG, 1));
             }
 
-            TextComponent component = component_prefix.append(Component.text(player.getName() + " has awakened as the ", NamedTextColor.DARK_RED))
-                    .append(Component.text("DRAGON KEEPER!").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true));
+            TextComponent component = component_prefix.append(Component.text(player.getName() + " has awakened as the ", NamedTextColor.RED))
+                    .append(Component.text("DRAGON KEEPER!").color(NamedTextColor.DARK_PURPLE).decoration(TextDecoration.BOLD, true));
             Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component));
 
             spawned = false;
@@ -241,20 +246,27 @@ public final class EventsHandler implements Listener {
             if(e.getPlayer().getWorld().getName().equals("world_the_end"))
                 world = "END DIMENSION";
 
-            String loc = ", over 25 thousand blocks away from center!";
-            if(e.getPlayer().getLocation().getX() <= 25000 &&
-                    e.getPlayer().getLocation().getZ() <= 25000)
-                loc = ", within 25 thousand blocks away from center!";
+            List<Integer> borders = plugin.config.getBorders();
+            float multiplier = 1;
+            if(e.getPlayer().getWorld().getName().equals("world_nether"))
+                multiplier = 8;
+
+            String loc = ", over " + Math.round(borders.get(0) / multiplier) + " blocks away from the center!";
+
+            for(int i : borders) {
+                if(e.getPlayer().getLocation().getX() <= i &&
+                        e.getPlayer().getLocation().getZ() <= i)
+                    loc = ", within " + Math.round(i / multiplier) + " blocks away from the center!";
+                else break;
+            }
             if(!plugin.config.isSpoil_location()) loc = "!";
 
-            TextComponent component = component_prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
-                    .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
-                    .append(Component.text("has escaped to the " + world + loc, NamedTextColor.DARK_RED));
+            TextComponent component = component_prefix.append(Component.text("The ", NamedTextColor.RED))
+                    .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.DARK_PURPLE).decoration(TextDecoration.BOLD, true))
+                    .append(Component.text("has escaped to the " + world + loc, NamedTextColor.RED));
             if(plugin.config.isSpoil_world()) Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component));
         }
     }
-
-
 
     private void DRAGON_CLEAR(Player player) {
         revokePerks(player);
@@ -271,7 +283,6 @@ public final class EventsHandler implements Listener {
         passPerks(player);
         assignDragon(player);
     }
-
 
     private void fountain_crystallize() {
         Random r = new Random();

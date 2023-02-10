@@ -1,10 +1,10 @@
 #Automatically handles the case of dragon egg falling in the void. Turn this off if not needed.
-void_protection: True
+void_protection: True #Needs restart
 
 #Provide the plugin with the world name for egg respawn.
 world_name: "world_the_end"
 
-#Provide the plugin with the location for egg respawn (usually end fountain).
+#Provide the plugin with the egg respawn location (that's usually the end fountain).
 egg_location:
   - 0
   - 66
@@ -21,9 +21,15 @@ spoil_world: True
 
 #Decides whether the location of the Dragon Keeper will be broadcast when changing worlds.
 spoil_location: True
+  #Specify the borders associated with location broadcasts. (ratio 1:8 for the nether)
+  borders:
+    - 1000
+    - 3000
+    - 7000
+    - 15000
+    - 31000
 
-
-#Multipliers for the effects granted to the Dragon Keeper.
+#Multipliers and effects granted to the Dragon Keeper.
 
 #accepted effects: strength, speed, haste, jump, regen, resist, fire_resist, water_breath, night_vision, luck, fatigue, weakness, blindness
 effects:
