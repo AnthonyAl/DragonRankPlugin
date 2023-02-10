@@ -10,16 +10,14 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.entity.EnderDragon;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Item;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.*;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
@@ -28,22 +26,19 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.InputMismatchException;
 import java.util.Optional;
 import java.util.Random;
 
 public final class EventsHandler implements Listener {
 
     private final DragonRank plugin;
+    private boolean spawned = false;
 
     private final TextComponent component_prefix = Component.text("[", NamedTextColor.GOLD)
             .append(Component.text("Broadcast", NamedTextColor.DARK_RED))
             .append(Component.text("] ", NamedTextColor.GOLD));
-
-    private final TextComponent component_generic_lost = component_prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
-            .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
-            .append(Component.text("has lost the egg! It must have returned to the END!", NamedTextColor.DARK_RED));
 
     private final TextComponent component_egg_despawn = component_prefix.append(Component.text("The ", NamedTextColor.DARK_RED))
             .append(Component.text("DRAGON EGG ").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true))
@@ -60,78 +55,88 @@ public final class EventsHandler implements Listener {
 
     public EventsHandler(DragonRank plugin) {
         this.plugin = plugin;
-    }
 
-    @EventHandler
-    public void onDragonEggMove(InventoryClickEvent e) {
-        try {
-            if (e.getInventory().getType() != InventoryType.PLAYER &&
-                e.getInventory().getType() != InventoryType.CREATIVE)
-                if (e.getCurrentItem().getType() == Material.DRAGON_EGG) {
-                    e.setCancelled(true);
-                }
-            if(e.getInventory().getHolder() instanceof Player p) {
-                if(p.getInventory().getItemInOffHand().getType() == Material.DRAGON_EGG) {
-                    e.setCancelled(true);
+        if(plugin.config.isVoid_protection()) new BukkitRunnable() {
+
+            @Override
+            public void run() {
+                for(Entity e : plugin.config.getWorld().getEntitiesByClasses(Item.class, FallingBlock.class)) {
+                    if(e instanceof Item item) {
+                        if(item.getItemStack().getType() == Material.DRAGON_EGG) {
+                            if(item.getLocation().getY() < 0) {
+                                item.remove();
+
+                                Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component_egg_despawn));
+
+                                spawned = false;
+                            }
+                        }
+                    }
+                    else if(e instanceof FallingBlock fb) {
+                        if(fb.getBlockData().getMaterial() == Material.DRAGON_EGG) {
+                            if(fb.getLocation().getY() < 0) {
+                                fb.remove();
+
+                                Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component_egg_despawn));
+
+                                spawned = false;
+                            }
+                        }
+                    }
                 }
             }
+        }.runTaskTimer(plugin, 0, 60);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onDragonEggMove(InventoryClickEvent e) {
+        try {
+            if (e.getCurrentItem().getType() == Material.DRAGON_EGG) {
+                if(e.getAction() != InventoryAction.DROP_ONE_SLOT)
+                    e.setCancelled(true);
+            }
+            if(e.getInventory().contains(Material.DRAGON_EGG))
+                if(e.getWhoClicked() instanceof Player p) {
+                    if(p.getInventory().getItemInOffHand().getType() == Material.DRAGON_EGG) {
+
+                        p.getInventory().setItemInOffHand(p.getInventory().getItem(9));
+                        p.getInventory().setItem(9, new ItemStack(Material.DRAGON_EGG, 1));
+                    }
+
+                    try {
+                        if (p.getInventory().getItem(9).getType() != Material.DRAGON_EGG) {
+                            int i = p.getInventory().first(Material.DRAGON_EGG);
+                            p.getInventory().setItem(i, p.getInventory().getItem(9));
+                            p.getInventory().setItem(9, new ItemStack(Material.DRAGON_EGG, 1));
+                        }
+                    }
+                    catch(NullPointerException ignored) {
+                        p.getInventory().remove(Material.DRAGON_EGG);
+                        p.getInventory().setItem(9, new ItemStack(Material.DRAGON_EGG, 1));
+                    }
+                }
         }
         catch(NullPointerException ignored) {}
     }
 
-    @EventHandler
-    public void inventoryOpenChecker(InventoryOpenEvent e) {
-        if (e.getPlayer().getInventory().getItemInOffHand().getType() == Material.DRAGON_EGG) {
-            e.setCancelled(true);
-        }
-        if(e.getPlayer().getEnderChest().contains(Material.DRAGON_EGG)) {
-            e.getPlayer().getEnderChest().remove(Material.DRAGON_EGG);
-
-            Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component_generic_lost));
-
-            try {
-                DRAGON_CLEAR((Player) e.getPlayer());
-            } catch (InputMismatchException ignored) {
-                if(plugin.config.isPlace_crystals()) fountain_crystallize();
-            }
-        }
-        if(!e.getPlayer().getInventory().contains(Material.DRAGON_EGG)) {
-
-            Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component_generic_lost));
-
-            try {
-                DRAGON_CLEAR((Player) e.getPlayer());
-            } catch (InputMismatchException ignored) {
-                if(plugin.config.isPlace_crystals()) fountain_crystallize();
-            }
-        }
-    }
-
-    @EventHandler
-    public void interactChecker(PlayerInteractEvent e) {
-        if(plugin.getDRAGON() == null) return;
-        if(plugin.getDRAGON().equals(e.getPlayer())) {
-            if(!e.getPlayer().getInventory().contains(Material.DRAGON_EGG)) {
-                DRAGON_CLEAR(e.getPlayer());
-            }
-        }
-    }
-
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onDragonEggPlace(BlockPlaceEvent e) {
         if(e.getBlock().getType() == Material.DRAGON_EGG) {
             e.setCancelled(true);
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onDragonEggRightClick(PlayerInteractEvent e) {
-        if(e.getItem().getType() == Material.DRAGON_EGG) {
-            e.setCancelled(true);
+        try {
+            if (e.getItem().getType() == Material.DRAGON_EGG) {
+                e.setCancelled(true);
+            }
         }
+        catch(NullPointerException ignored) {}
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onDragonEggDespawn(ItemDespawnEvent e) {
         if(e.getEntity().getType() == EntityType.DROPPED_ITEM) {
             if (e.getEntity().getItemStack().getType() == Material.DRAGON_EGG) {
@@ -139,11 +144,12 @@ public final class EventsHandler implements Listener {
                 Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component_egg_despawn));
 
                 if(plugin.config.isPlace_crystals()) fountain_crystallize();
+                spawned = false;
             }
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void noDragonEggDie(EntityDamageEvent event) {
         if (event.getEntity().getType() == EntityType.DROPPED_ITEM) {
             Item i = (Item) event.getEntity();
@@ -154,7 +160,7 @@ public final class EventsHandler implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onDragonEggDropByDeath(PlayerDeathEvent e) {
         for(ItemStack is : e.getDrops()) {
             if(is.getType() == Material.DRAGON_EGG) {
@@ -168,7 +174,7 @@ public final class EventsHandler implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onDragonEggDropByChoice(PlayerDropItemEvent e) {
         if(e.getItemDrop().getItemStack().getType() == Material.DRAGON_EGG) {
             if(!plugin.config.isEgg_drop()) e.getItemDrop().remove();
@@ -179,30 +185,46 @@ public final class EventsHandler implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onEnderDragonDeath(EntityDeathEvent e) {
-        if(plugin.getDRAGON() == null && e.getEntity() instanceof EnderDragon && !plugin.config.isEgg_drop()) {
+        if(plugin.getDRAGON() == null && e.getEntity() instanceof EnderDragon && !plugin.config.isEgg_drop() && !spawned) {
             Location loc = plugin.config.getLocation();
             loc.getBlock().setType(Material.DRAGON_EGG);
+            spawned = true;
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onDragonEggPlayerPickup(EntityPickupItemEvent e) {
         if(e.getItem().getItemStack().getType() == Material.DRAGON_EGG) {
             if(!(e.getEntity() instanceof Player)) e.setCancelled(true);
 
             Player player = (Player) e.getEntity();
+            try {
+                if (player.getInventory().getItem(9).getType() != Material.DRAGON_EGG) {
+                    int i = player.getInventory().firstEmpty();
+                    player.getInventory().setItem(i, player.getInventory().getItem(9));
+                    player.getInventory().setItem(9, new ItemStack(Material.DRAGON_EGG, 1));
+                }
+            }
+            catch(NullPointerException ignored) {
+                player.getInventory().remove(Material.DRAGON_EGG);
+                player.getInventory().setItem(9, new ItemStack(Material.DRAGON_EGG, 1));
+            }
 
             TextComponent component = component_prefix.append(Component.text(player.getName() + " has awakened as the ", NamedTextColor.DARK_RED))
                     .append(Component.text("DRAGON KEEPER!").color(NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.BOLD, true));
             Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component));
 
+            spawned = false;
             DRAGON_REASSIGN(player);
+
+            e.getItem().remove();
+            e.setCancelled(true);
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onDragonEggPickup(InventoryPickupItemEvent e) {
         if(e.getItem().getItemStack().getType() == Material.DRAGON_EGG) {
             if (e.getInventory().getType() != InventoryType.PLAYER &&
@@ -210,7 +232,7 @@ public final class EventsHandler implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onDragonKeeperTravel(PlayerChangedWorldEvent e) {
         if(e.getPlayer() == plugin.getDRAGON()) {
             String world = "OVER WORLD";
@@ -258,15 +280,24 @@ public final class EventsHandler implements Listener {
         Location crys2 = new Location(base_loc.getWorld(), base_loc.getX(), base_loc.getY() - 3, base_loc.getZ() - 3);
         Location crys3 = new Location(base_loc.getWorld(), base_loc.getX() + 3, base_loc.getY() - 3, base_loc.getZ());
 
-        if(r.nextInt(100) < 65) crys1.getBlock().setType(Material.END_CRYSTAL);
-        if(r.nextInt(100) < 35) crys2.getBlock().setType(Material.END_CRYSTAL);
-        if(r.nextInt(100) < 5) crys3.getBlock().setType(Material.END_CRYSTAL);
+        if(r.nextInt(100) < 65) {
+            EnderCrystal EC1 = (EnderCrystal) base_loc.getWorld().spawnEntity(crys1.toCenterLocation(), EntityType.ENDER_CRYSTAL);
+            EC1.setShowingBottom(false);
+        }
+        if(r.nextInt(100) < 35) {
+            EnderCrystal EC2 = (EnderCrystal) base_loc.getWorld().spawnEntity(crys2.toCenterLocation(), EntityType.ENDER_CRYSTAL);
+            EC2.setShowingBottom(false);
+        }
+        if(r.nextInt(100) < 5) {
+            EnderCrystal EC3 = (EnderCrystal) base_loc.getWorld().spawnEntity(crys3.toCenterLocation(), EntityType.ENDER_CRYSTAL);
+            EC3.setShowingBottom(false);
+        }
     }
 
     private void passPerks(Player p) {
         for(PotionEffectType type : plugin.config.getEffects().keySet()) {
-            if(plugin.config.getEffects().get(type) > 0)
-                p.addPotionEffect(new PotionEffect(type, Integer.MAX_VALUE, plugin.config.getEffects().get(type) -1, false, false));
+            if(plugin.config.getEffects().get(type) > -1)
+                p.addPotionEffect(new PotionEffect(type, Integer.MAX_VALUE, plugin.config.getEffects().get(type), false, false));
         }
 
 

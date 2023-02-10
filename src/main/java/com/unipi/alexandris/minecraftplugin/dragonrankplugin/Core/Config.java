@@ -5,33 +5,33 @@ import org.bukkit.World;
 
 public class Config {
 
-    private boolean dragon_keeper;
+    private boolean void_protection;
     private boolean spoil_world;
     private boolean spoil_location;
     private boolean egg_drop;
     private boolean place_crystals;
     private World world;
     private Location location;
-    private int strength = 0;
-    private int speed = 0;
-    private int haste = 0;
-    private int jump = 0;
-    private int regen = 0;
-    private int resist = 0;
-    private int fire_resist = 0;
-    private int water_breath = 0;
-    private int night_vision = 0;
-    private int luck = 0;
-    private int fatigue = 0;
-    private int weakness = 0;
-    private int blindness = 0;
+    private int strength = -1;
+    private int speed = -1;
+    private int haste = -1;
+    private int jump = -1;
+    private int regen = -1;
+    private int resist = -1;
+    private int fire_resist = -1;
+    private int water_breath = -1;
+    private int night_vision = -1;
+    private int luck = -1;
+    private int fatigue = -1;
+    private int weakness = -1;
+    private int blindness = -1;
 
-    public boolean isDragon() {
-        return dragon_keeper;
+    public boolean isVoid_protection() {
+        return void_protection;
     }
 
-    public void setDragon(boolean dragon_keeper) {
-        this.dragon_keeper = dragon_keeper;
+    public void setVoid_protection(boolean void_protection) {
+        this.void_protection = void_protection;
     }
 
     public boolean isSpoil_world() {

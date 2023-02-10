@@ -1,5 +1,5 @@
-#Placeholder config for future implementation.
-dragon_keeper: True
+#Automatically handles the case of dragon egg falling in the void. Turn this off if not needed.
+void_protection: True
 
 #Provide the plugin with the world name for egg respawn.
 world_name: "world_the_end"
