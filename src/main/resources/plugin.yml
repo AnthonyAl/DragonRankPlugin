@@ -1,6 +1,6 @@
 name: DragonTag
 version: '${project.version}'
-main: com.unipi.alexandris.minecraftplugin.dragonrankplugin.DragonRank
+main: com.unipi.alexandris.minecraftplugin.dragontagplugin.DragonTag
 api-version: 1.19
 authors: [ Antitonius ]
 description: A plugin implementing a Dragon Egg Tag Game with the help of UltraPermissions.
@@ -9,12 +9,27 @@ website: https://anthonyal.github.io
 load: POSTWORLD
 depend:
   - UltraPermissions
+softdepend:
+  - OpenInv
 commands:
-  dragon_keeper:
+  dragontag:
     description: Command group for Dragon Keeper.
-    aliases: dk
-    permission: dragon_keeper
+    aliases: dt
+    permission: dragontag.info
 permissions:
-  dragon_keeper:
+  dragontag.admin:
     description: Access to all Dragon Keeper commands.
     default: op
+    children:
+      - dragontag.access
+      - dragontag.info
+  dragontag.access:
+    description: Restricted access to /dt current remove, /dt current assign and /dt current reset.
+    default: op
+    children:
+      - dragontag.info
+  dragontag.info:
+    description: Access to /dt and /dt current name.
+    default: op
+
+

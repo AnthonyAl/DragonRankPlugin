@@ -1,4 +1,4 @@
-package com.unipi.alexandris.minecraftplugin.dragonrankplugin.Core;
+package com.unipi.alexandris.minecraftplugin.dragontagplugin.Core;
 
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -8,6 +8,7 @@ import java.util.List;
 public class Config {
 
     private boolean void_protection;
+    private boolean offline_mode;
     private boolean spoil_world;
     private boolean spoil_location;
     private List<Integer> borders;
@@ -35,6 +36,14 @@ public class Config {
 
     public void setVoid_protection(boolean void_protection) {
         this.void_protection = void_protection;
+    }
+
+    public boolean isOffline_mode() {
+        return offline_mode;
+    }
+
+    public void setOffline_mode(boolean offline_mode) {
+        this.offline_mode = offline_mode;
     }
 
     public boolean isSpoil_world() {

@@ -1,5 +1,8 @@
 #Automatically handles the case of dragon egg falling in the void. Turn this off if not needed.
-void_protection: True #Needs restart
+void_protection: True #Needs restart.
+
+#Allows the plugin's commands to opperate with ofline players. The commands get scheduled to execute when target players come online.
+offline_mode: False #Needs restart.
 
 #Provide the plugin with the world name for egg respawn.
 world_name: "world_the_end"
@@ -22,12 +25,12 @@ spoil_world: True
 #Decides whether the location of the Dragon Keeper will be broadcast when changing worlds.
 spoil_location: True
   #Specify the borders associated with location broadcasts. (ratio 1:8 for the nether)
-  borders:
-    - 1000
-    - 3000
-    - 7000
-    - 15000
-    - 31000
+borders:
+  - 1000
+  - 3000
+  - 7000
+  - 15000
+  - 31000
 
 #Multipliers and effects granted to the Dragon Keeper.
 

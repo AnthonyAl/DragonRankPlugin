@@ -1,7 +1,7 @@
-package com.unipi.alexandris.minecraftplugin.dragonrankplugin.Handlers;
+package com.unipi.alexandris.minecraftplugin.dragontagplugin.Handlers;
 
-import com.unipi.alexandris.minecraftplugin.dragonrankplugin.Core.Config;
-import com.unipi.alexandris.minecraftplugin.dragonrankplugin.DragonRank;
+import com.unipi.alexandris.minecraftplugin.dragontagplugin.Core.Config;
+import com.unipi.alexandris.minecraftplugin.dragontagplugin.DragonTag;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -17,10 +17,11 @@ public final class ConfigHandler {
 
     private final HashMap<PotionEffectType, Integer> effects = new HashMap<>();
 
-    public ConfigHandler(DragonRank plugin) {
+    public ConfigHandler(DragonTag plugin) {
         FileConfiguration fileConfiguration = plugin.getConfig();
 
         config.setVoid_protection(fileConfiguration.getBoolean("void_protection"));
+        config.setOffline_mode(fileConfiguration.getBoolean("offline_mode"));
         config.setWorld(plugin.getServer().getWorld(fileConfiguration.getString("world_name")));
         List<Integer> xyz = (List<Integer>) fileConfiguration.getList("egg_location");
         config.setLocation(new Location(config.getWorld(), xyz.get(0), xyz.get(1), xyz.get(2)));
@@ -30,10 +31,10 @@ public final class ConfigHandler {
         config.setSpoil_location(fileConfiguration.getBoolean("spoil_location"));
 
         List<Integer> borders = new ArrayList<>();
-        String[] temp = (String[]) fileConfiguration.getList("spoil_location.borders").toArray();
-        for(String s : temp) {
+        List<?> temp = fileConfiguration.getList("borders");
+        for(Object o : temp) {
             try {
-                int i = Integer.parseInt(s);
+                int i = Integer.parseInt(String.valueOf(o));
                 borders.add(i);
             }
             catch(NumberFormatException ignored) {}
@@ -163,10 +164,10 @@ public final class ConfigHandler {
 
         if(plugin.getDRAGON() != null) {
             for(PotionEffectType type : effects.keySet()) {
-                plugin.getDRAGON().removePotionEffect(type);
+                plugin.getServer().getPlayer(plugin.getDRAGON()).removePotionEffect(type);
 
                 if(effects.get(type) > -1)
-                    plugin.getDRAGON().addPotionEffect(new PotionEffect(type, Integer.MAX_VALUE, effects.get(type), false, false));
+                    plugin.getServer().getPlayer(plugin.getDRAGON()).addPotionEffect(new PotionEffect(type, Integer.MAX_VALUE, effects.get(type), false, false));
             }
         }
     }
@@ -194,6 +195,10 @@ public final class ConfigHandler {
 
     public boolean isVoid_protection() {
         return config.isVoid_protection();
+    }
+
+    public boolean isOffline_mode() {
+        return config.isOffline_mode();
     }
 
     public World getWorld() {

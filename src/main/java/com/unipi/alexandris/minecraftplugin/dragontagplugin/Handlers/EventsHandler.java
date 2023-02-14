@@ -1,8 +1,7 @@
-package com.unipi.alexandris.minecraftplugin.dragonrankplugin.Handlers;
+package com.unipi.alexandris.minecraftplugin.dragontagplugin.Handlers;
 
-import com.unipi.alexandris.minecraftplugin.dragonrankplugin.DragonRank;
-import me.TechsCode.UltraPermissions.UltraPermissions;
-import me.TechsCode.UltraPermissions.storage.objects.User;
+import com.unipi.alexandris.minecraftplugin.dragontagplugin.Core.Utils;
+import com.unipi.alexandris.minecraftplugin.dragontagplugin.DragonTag;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -20,22 +19,16 @@ import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
 import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.event.player.PlayerChangedWorldEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.Random;
 
 public final class EventsHandler implements Listener {
 
-    private final DragonRank plugin;
-    private boolean spawned = false;
+    private final DragonTag plugin;
 
     private final TextComponent component_prefix = Component.text("[", NamedTextColor.GOLD)
             .append(Component.text("Broadcast", NamedTextColor.DARK_RED))
@@ -54,7 +47,7 @@ public final class EventsHandler implements Listener {
             .append(Component.text("has given up the egg! It has returned in the END!", NamedTextColor.RED));
 
 
-    public EventsHandler(DragonRank plugin) {
+    public EventsHandler(DragonTag plugin) {
         this.plugin = plugin;
 
         if(plugin.config.isVoid_protection()) new BukkitRunnable() {
@@ -69,7 +62,7 @@ public final class EventsHandler implements Listener {
 
                                 Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component_egg_despawn));
 
-                                spawned = false;
+                                plugin.EGG_SPAWNED = false;
                             }
                         }
                     }
@@ -80,7 +73,7 @@ public final class EventsHandler implements Listener {
 
                                 Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component_egg_despawn));
 
-                                spawned = false;
+                                plugin.EGG_SPAWNED = false;
                             }
                         }
                     }
@@ -96,7 +89,7 @@ public final class EventsHandler implements Listener {
         try {
             if (e.getCurrentItem().getType() == Material.DRAGON_EGG) {
                 if(e.getAction() != InventoryAction.DROP_ONE_SLOT) {
-                    if(e.getWhoClicked() instanceof Player p) passPerks(p);
+                    if(e.getWhoClicked() instanceof Player p) Utils.passPerks(p);
                     e.setCancelled(true);
                 }
             }
@@ -148,8 +141,8 @@ public final class EventsHandler implements Listener {
 
                 Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component_egg_despawn));
 
-                if(plugin.config.isPlace_crystals()) fountain_crystallize();
-                spawned = false;
+                if(plugin.config.isPlace_crystals()) Utils.fountain_crystallize();
+                plugin.EGG_SPAWNED = false;
             }
         }
     }
@@ -174,7 +167,7 @@ public final class EventsHandler implements Listener {
 
                 Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component_lost_natural));
 
-                DRAGON_CLEAR(e.getPlayer());
+                Utils.DRAGON_CLEAR(e.getPlayer());
             }
         }
     }
@@ -186,16 +179,16 @@ public final class EventsHandler implements Listener {
 
             Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component_dropped));
 
-            DRAGON_CLEAR(e.getPlayer());
+            Utils.DRAGON_CLEAR(e.getPlayer());
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onEnderDragonDeath(EntityDeathEvent e) {
-        if(plugin.getDRAGON() == null && e.getEntity() instanceof EnderDragon && !plugin.config.isEgg_drop() && !spawned) {
+        if(plugin.getDRAGON() == null && e.getEntity() instanceof EnderDragon && !plugin.config.isEgg_drop() && !plugin.EGG_SPAWNED) {
             Location loc = plugin.config.getLocation();
             loc.getBlock().setType(Material.DRAGON_EGG);
-            spawned = true;
+            plugin.EGG_SPAWNED = true;
         }
     }
 
@@ -205,24 +198,27 @@ public final class EventsHandler implements Listener {
             if(!(e.getEntity() instanceof Player)) e.setCancelled(true);
 
             Player player = (Player) e.getEntity();
+            player.getInventory().remove(Material.DRAGON_EGG);
             try {
                 if (player.getInventory().getItem(9).getType() != Material.DRAGON_EGG) {
                     int i = player.getInventory().firstEmpty();
                     player.getInventory().setItem(i, player.getInventory().getItem(9));
-                    player.getInventory().setItem(9, new ItemStack(Material.DRAGON_EGG, 1));
+                    player.getInventory().setItem(9, new ItemStack(Material.DRAGON_EGG));
+                    e.setCancelled(true);
                 }
             }
             catch(NullPointerException ignored) {
                 player.getInventory().remove(Material.DRAGON_EGG);
-                player.getInventory().setItem(9, new ItemStack(Material.DRAGON_EGG, 1));
+                player.getInventory().setItem(9, new ItemStack(Material.DRAGON_EGG));
+                e.setCancelled(true);
             }
 
             TextComponent component = component_prefix.append(Component.text(player.getName() + " has awakened as the ", NamedTextColor.RED))
                     .append(Component.text("DRAGON KEEPER!").color(NamedTextColor.DARK_PURPLE).decoration(TextDecoration.BOLD, true));
             Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component));
 
-            spawned = false;
-            DRAGON_REASSIGN(player);
+            plugin.EGG_SPAWNED = false;
+            Utils.DRAGON_REASSIGN(player);
 
             e.getItem().remove();
             e.setCancelled(true);
@@ -239,7 +235,7 @@ public final class EventsHandler implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onDragonKeeperTravel(PlayerChangedWorldEvent e) {
-        if(e.getPlayer() == plugin.getDRAGON()) {
+        if(e.getPlayer().getUniqueId() == plugin.getDRAGON()) {
             String world = "OVER WORLD";
             if(e.getPlayer().getWorld().getName().equals("world_nether"))
                 world = "NETHER DIMENSION";
@@ -268,72 +264,24 @@ public final class EventsHandler implements Listener {
         }
     }
 
-    private void DRAGON_CLEAR(Player player) {
-        revokePerks(player);
-        removeDragon(player);
-
-        if(plugin.config.isPlace_crystals()) fountain_crystallize();
-    }
-
-    private void DRAGON_REASSIGN(Player player) {
-        if(plugin.getDRAGON() != null) {
-            revokePerks(player);
-            removeDragon(player);
-        }
-        passPerks(player);
-        assignDragon(player);
-    }
-
-    private void fountain_crystallize() {
-        Random r = new Random();
-        Location base_loc = plugin.config.getLocation();
-        Location crys1 = new Location(base_loc.getWorld(), base_loc.getX(), base_loc.getY() - 3, base_loc.getZ() + 3);
-        Location crys2 = new Location(base_loc.getWorld(), base_loc.getX(), base_loc.getY() - 3, base_loc.getZ() - 3);
-        Location crys3 = new Location(base_loc.getWorld(), base_loc.getX() + 3, base_loc.getY() - 3, base_loc.getZ());
-
-        if(r.nextInt(100) < 65) {
-            EnderCrystal EC1 = (EnderCrystal) base_loc.getWorld().spawnEntity(crys1.toCenterLocation(), EntityType.ENDER_CRYSTAL);
-            EC1.setShowingBottom(false);
-        }
-        if(r.nextInt(100) < 35) {
-            EnderCrystal EC2 = (EnderCrystal) base_loc.getWorld().spawnEntity(crys2.toCenterLocation(), EntityType.ENDER_CRYSTAL);
-            EC2.setShowingBottom(false);
-        }
-        if(r.nextInt(100) < 5) {
-            EnderCrystal EC3 = (EnderCrystal) base_loc.getWorld().spawnEntity(crys3.toCenterLocation(), EntityType.ENDER_CRYSTAL);
-            EC3.setShowingBottom(false);
-        }
-    }
-
-    private void passPerks(Player p) {
-        for(PotionEffectType type : plugin.config.getEffects().keySet()) {
-            if(plugin.config.getEffects().get(type) > -1)
-                p.addPotionEffect(new PotionEffect(type, Integer.MAX_VALUE, plugin.config.getEffects().get(type), false, false));
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onPlayerJoin(PlayerJoinEvent e) {
+        Player player = e.getPlayer();
+        List<String> scheduled_commands = new ArrayList<>();
+        String command = Utils.getScheduledCommand(player.getUniqueId());
+        while(command != null) {
+            scheduled_commands.add(0, command);
+            Utils.removeScheduledCommand(player.getUniqueId(), command);
+            command = Utils.getScheduledCommand(player.getUniqueId());
         }
 
-
-    }
-
-    private void revokePerks(Player p) {
-       for(PotionEffectType type : plugin.config.getEffects().keySet()) p.removePotionEffect(type);
-    }
-
-    private void assignDragon(Player player) {
-        if(plugin.getUpAPI() == null) plugin.setUpAPI(UltraPermissions.getAPI());
-        Optional<User> user = plugin.getUpAPI().getUsers().uuid(player.getUniqueId());
-        user.ifPresent(value -> value.setPrefix("&8<&r{#4d0057>}D{#4d0057<}{#480053>}r{#480053<}{#42014f>}a{#42014f<}{#3d014c>}g{#3d014c<}{#380248>}o{#380248<}{#320244>}n{#320244<}{#2d0340>}K{#2d0340<}{#27033c>}e{#27033c<}{#220438>}e{#220438<}{#1d0435>}p{#1d0435<}{#170531>}e{#170531<}{#12052d>}r{#12052d<}&8>&r"));
-        user.ifPresent(value -> value.setSuffix("&8<&r{#4d0057>}D{#4d0057<}{#480053>}r{#480053<}{#42014f>}a{#42014f<}{#3d014c>}g{#3d014c<}{#380248>}o{#380248<}{#320244>}n{#320244<}&8>"));
-
-        plugin.setDRAGON(player);
-    }
-
-    private void removeDragon(Player player) {
-        if(plugin.getUpAPI() == null) plugin.setUpAPI(UltraPermissions.getAPI());
-        Optional<User> user = plugin.getUpAPI().getUsers().uuid(player.getUniqueId());
-        user.ifPresent(value -> value.setPrefix(null));
-        user.ifPresent(value -> value.setSuffix(null));
-
-        plugin.setDRAGON(null);
+       for(String c : scheduled_commands) {
+            switch (c) {
+                case "reset" -> Utils.reset(player, null);
+                case "remove" -> Utils.remove(player, null);
+                case "assign" -> Utils.assign(player, null);
+            }
+        }
     }
 
 }
