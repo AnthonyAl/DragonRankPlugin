@@ -1,5 +1,6 @@
 package com.unipi.alexandris.minecraftplugin.dragontagplugin;
 
+import com.unipi.alexandris.minecraftplugin.dragontagplugin.Core.DragonPlaceholders;
 import com.unipi.alexandris.minecraftplugin.dragontagplugin.Core.Utils;
 import com.unipi.alexandris.minecraftplugin.dragontagplugin.Handlers.CommandsHandler;
 import com.unipi.alexandris.minecraftplugin.dragontagplugin.Handlers.ConfigHandler;
@@ -51,6 +52,11 @@ public final class DragonTag extends JavaPlugin {
         }
 
         Utils.loadScheduledCommands();
+
+        if( this.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")){
+            //Registering placeholder will be use here
+            new DragonPlaceholders(this).register();
+        }
 
     }
 

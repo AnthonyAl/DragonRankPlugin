@@ -27,12 +27,13 @@ public class CurrentCmd implements SubCommand{
     }
     @Override
     public boolean onCommand(CommandSender sender, String[] args) {
-        if(args.length == 2 && Objects.equals(args[0], "assign")) {
-            if(!sender.hasPermission("dragontag.admin")) {
-                sender.sendMessage(Utils.prefix + ChatColor.RED + "You do not fulfill the required permissions to use this command.");
-                return true;
-            }
+        HashMap<String, String> subCommandPermissions = getSubPermissions();
+        if(args.length > 0 && !sender.hasPermission(subCommandPermissions.get(args[0]))) {
+            sender.sendMessage(Utils.prefix + ChatColor.RED + "You do not fulfill the required permissions to use this command.");
+            return true;
+        }
 
+        if(args.length == 2 && Objects.equals(args[0], "assign")) {
             try {
                 final Player p = plugin.getServer().getPlayer(args[1]);
                 final Player dragon = plugin.getServer().getPlayer(plugin.getDRAGON());
@@ -80,12 +81,14 @@ public class CurrentCmd implements SubCommand{
                 OfflinePlayer ODRAGON = plugin.getServer().getOfflinePlayer(plugin.getDRAGON());
                 if (sender instanceof Player) {
                     if(DRAGON != null) {
-                        sender.sendMessage(prefix + DRAGON.getName());
-                        plugin.getServer().getLogger().info("[DragonTag] he current DragonKeeper is: " + DRAGON.getName());
+                        sender.sendMessage(prefix + ChatColor.BOLD + ChatColor.YELLOW + DRAGON.getName() +
+                                ChatColor.RESET + " is the current" + ChatColor.DARK_GRAY + ChatColor.BOLD + " Dragon Keeper" + ChatColor.RESET + "!");
+                        plugin.getServer().getLogger().info("[DragonTag] The current DragonKeeper is: " + DRAGON.getName());
                     }
                     else {
-                        sender.sendMessage(prefix + ODRAGON.getName());
-                        plugin.getServer().getLogger().info("[DragonTag] he current DragonKeeper is: " + ODRAGON.getName());
+                        sender.sendMessage(prefix + ChatColor.BOLD + ChatColor.YELLOW + ODRAGON.getName() +
+                                ChatColor.RESET + " is the current" + ChatColor.DARK_GRAY + ChatColor.BOLD + " Dragon Keeper" + ChatColor.RESET + "!");
+                        plugin.getServer().getLogger().info("[DragonTag] The current DragonKeeper is: " + ODRAGON.getName());
                     }
                 }
                 else
@@ -93,11 +96,6 @@ public class CurrentCmd implements SubCommand{
                     else sender.sendMessage(ODRAGON.getName());
 
             } else if (Objects.equals(args[0], "reset")) {
-                if(!sender.hasPermission("dragontag.admin")) {
-                    sender.sendMessage(Utils.prefix + ChatColor.RED + "You do not fulfill the required permissions to use this command.");
-                    return true;
-                }
-
                 try {
                     Player p = plugin.getServer().getPlayer(plugin.getDRAGON());
 
@@ -126,11 +124,6 @@ public class CurrentCmd implements SubCommand{
                     plugin.getServer().getLogger().severe("[DragonTag] " + e.getMessage());
                 }
             } else if (Objects.equals(args[0], "remove")) {
-                if(!sender.hasPermission("dragontag.admin")) {
-                    sender.sendMessage(Utils.prefix + ChatColor.RED + "You do not fulfill the required permissions to use this command.");
-                    return true;
-                }
-
                 try {
                     Player p = plugin.getServer().getPlayer(plugin.getDRAGON());
 
@@ -181,6 +174,37 @@ public class CurrentCmd implements SubCommand{
                     sender.sendMessage(prefix + ChatColor.YELLOW + "DRAGON TIME has not yet been implemented. Stay tuned for a future update!");
                 }
 
+            } else if (Objects.equals(args[0], "locate")) {
+                if(plugin.getDRAGON() != null) {
+                    Player p = plugin.getServer().getPlayer(plugin.getDRAGON());
+                    if (p != null) {
+                        String world = p.getWorld().getName();
+                        world.toUpperCase().replaceAll("THE", "").replaceAll("__", "_").replaceAll("_", " ");
+                        if(p.getWorld().getName().equals("world"))
+                            world = "OVER WORLD";
+                        if(p.getWorld().getName().equals("world_nether"))
+                            world = "NETHER DIMENSION";
+                        if(p.getWorld().getName().equals("world_the_end"))
+                            world = "END DIMENSION";
+
+                        double multiplier = p.getWorld().getCoordinateScale();
+
+                        String loc = Utils.calc_coords(p, multiplier);
+                        if (!plugin.config.isSpoil_location()) loc = "!";
+
+                        if (plugin.config.isSpoil_world())
+                            sender.sendMessage(prefix + ChatColor.WHITE + "The current " + ChatColor.DARK_GRAY + ChatColor.BOLD + "Dragon Keeper " +
+                                    ChatColor.RESET + "is located in the " + ChatColor.YELLOW + world + loc);
+                        else
+                            sender.sendMessage(prefix + ChatColor.YELLOW + "The Dragon Keeper's location is hidden!");
+                    }
+                    else {
+                        sender.sendMessage(prefix + ChatColor.YELLOW + "The Dragon Keeper is not online.");
+                    }
+                }
+                else {
+                    sender.sendMessage(prefix + ChatColor.YELLOW + "There is no Dragon Keeper at this time. This is your chance to claim glory!");
+                }
             } else if (Objects.equals(args[0], "effects")) {
                 StringBuilder effects = new StringBuilder();
                 Player p = plugin.getServer().getPlayer(plugin.getDRAGON());
@@ -238,6 +262,7 @@ public class CurrentCmd implements SubCommand{
         HashMap<String, String> subCommandPerms = new HashMap<>();
         subCommandPerms.put("name", "dragontag.info");
         //subCommandPerms.put("time", "dragontag.access");
+        subCommandPerms.put("locate", "dragontag.info");
         subCommandPerms.put("prefix", "dragontag.access");
         subCommandPerms.put("suffix", "dragontag.access");
         subCommandPerms.put("effects", "dragontag.access");

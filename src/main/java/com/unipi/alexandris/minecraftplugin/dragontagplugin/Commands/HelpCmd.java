@@ -25,9 +25,10 @@ public class HelpCmd implements SubCommand {
         sender.sendMessage(prefix + "Command list:");
 
         for (SubCommand cmd : cmdHandler.getCommands()) {
-            if (cmd.inGameOnly() && !(sender instanceof Player)) {
+            if (cmd.inGameOnly() && !(sender instanceof Player))
                 continue;
-            }
+            if(!sender.hasPermission(cmd.getPermission()))
+                continue;
 
             sender.sendMessage(ChatColor.GRAY + "  -" + ChatColor.AQUA + "/dragontag " + cmd.getUsage() + ChatColor.GRAY + " - " + cmd.getDescription());
         }

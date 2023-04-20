@@ -10,7 +10,7 @@ load: POSTWORLD
 depend:
   - UltraPermissions
 softdepend:
-  - OpenInv
+  - PlaceholderAPI
 commands:
   dragontag:
     description: Command group for Dragon Keeper.

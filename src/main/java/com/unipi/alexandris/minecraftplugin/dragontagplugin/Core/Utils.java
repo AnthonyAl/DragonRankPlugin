@@ -3,6 +3,10 @@ package com.unipi.alexandris.minecraftplugin.dragontagplugin.Core;
 import com.unipi.alexandris.minecraftplugin.dragontagplugin.DragonTag;
 import me.TechsCode.UltraPermissions.UltraPermissions;
 import me.TechsCode.UltraPermissions.storage.objects.User;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -31,15 +35,57 @@ public class Utils {
     public static final String DRAGON_PRE = "&8<&r{#4d0057>}D{#4d0057<}{#480053>}r{#480053<}{#42014f>}a{#42014f<}{#3d014c>}g{#3d014c<}{#380248>}o{#380248<}{#320244>}n{#320244<}{#2d0340>}K{#2d0340<}{#27033c>}e{#27033c<}{#220438>}e{#220438<}{#1d0435>}p{#1d0435<}{#170531>}e{#170531<}{#12052d>}r{#12052d<}&8>&r";
     public static final String DRAGON_SUF = "&8<&r{#4d0057>}D{#4d0057<}{#480053>}r{#480053<}{#42014f>}a{#42014f<}{#3d014c>}g{#3d014c<}{#380248>}o{#380248<}{#320244>}n{#320244<}&8>";
 
+
+    public static final TextComponent component_prefix = Component.text("[", NamedTextColor.GOLD)
+            .append(Component.text("Broadcast", NamedTextColor.DARK_RED))
+            .append(Component.text("] ", NamedTextColor.GOLD));
+
+    public static final TextComponent component_egg_despawn = component_prefix.append(Component.text("The ", NamedTextColor.RED))
+            .append(Component.text("DRAGON EGG ").color(NamedTextColor.DARK_PURPLE).decoration(TextDecoration.BOLD, true))
+            .append(Component.text("is obtainable in the END!", NamedTextColor.RED));
+
+    public static final TextComponent component_lost_natural = component_prefix.append(Component.text("The ", NamedTextColor.RED))
+            .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.DARK_PURPLE).decoration(TextDecoration.BOLD, true))
+            .append(Component.text("has perished! The egg was thus summoned back to the End.", NamedTextColor.RED));
+
+    public static final TextComponent component_dropped = component_prefix.append(Component.text("The ", NamedTextColor.RED))
+            .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.DARK_PURPLE).decoration(TextDecoration.BOLD, true))
+            .append(Component.text("has given up the egg! It has returned in the END!", NamedTextColor.RED));
+
+
+    public static String calc_coords(Player p, double multiplier) {
+
+        List<Integer> borders = plugin.config.getBorders();
+
+        String loc = ", over " + Math.round(borders.get(0) / multiplier) + " blocks away from the center!";
+
+        for(int i : borders) {
+            if(p.getLocation().getX() <= i &&
+                    p.getLocation().getZ() <= i)
+                loc = ", within " + Math.round(i / multiplier) + " blocks away from the center!";
+            else break;
+        }
+
+        return loc;
+    }
+
     public static void DRAGON_CLEAR(Player player) {
         revokePerks(player);
         removeDragon(player);
 
         if(plugin.config.isPlace_crystals()) fountain_crystallize();
+
+        saveData();
     }
 
     public static void DRAGON_REASSIGN(Player player) {
         if(plugin.getDRAGON() != null) {
+            Player p = plugin.getServer().getPlayer(plugin.getDRAGON());
+            if(p != null) {
+                revokePerks(p);
+                removeDragon(p);
+            }
+
             revokePerks(player);
             removeDragon(player);
         }
@@ -97,7 +143,8 @@ public class Utils {
         Optional<User> user = plugin.getUpAPI().getUsers().uuid(player.getUniqueId());
         user.ifPresent(value -> value.setPrefix(null));
         user.ifPresent(value -> value.setSuffix(null));
-        if(plugin.getDRAGON() != null && player.getUniqueId() == plugin.getDRAGON())
+
+        if(plugin.getDRAGON() != null && player.equals(plugin.getServer().getPlayer(plugin.getDRAGON())))
             plugin.setDRAGON(null);
     }
 
@@ -143,7 +190,7 @@ public class Utils {
             }
         }
 
-        plugin.EGG_SPAWNED = false;
+        plugin.EGG_SPAWNED = true;
         Utils.DRAGON_REASSIGN(p);
 
         if(sender != null) sender.sendMessage(prefix + "The current DragonTag game got manually started!");
@@ -176,6 +223,7 @@ public class Utils {
         String name = p.getName();
         Inventory i = p.getInventory();
 
+        plugin.EGG_SPAWNED = false;
         Utils.DRAGON_CLEAR(p);
 
 
@@ -200,6 +248,16 @@ public class Utils {
 
     public static String getScheduledCommand(UUID key) {
         return scheduled_commands.get(key);
+    }
+
+    public static List<UUID> getScheduledCommands(String command) {
+        List<String> accepted_commands = List.of(new String[]{"reset", "remove", "assign"});
+        List<UUID> commands = new ArrayList<>();
+        if(!accepted_commands.contains(command)) return commands;
+        for(UUID uuid : scheduled_commands.keySet())
+            if(Objects.equals(scheduled_commands.get(uuid), command))
+                commands.add(uuid);
+        return commands;
     }
 
     public static void removeScheduledCommand(UUID key, String command) {
@@ -249,6 +307,13 @@ public class Utils {
 
         return data;
 
+    }
+
+    public static void killScheduler() {
+        File file = new File(plugin.getDataFolder().getPath()+"/data/ScheduledCommands.ser");
+        if(file.exists()) {
+            file.delete();
+        }
     }
 
     private static void saveData() {
@@ -312,5 +377,12 @@ public class Utils {
         }
 
         return data;
+    }
+
+    public static void killData() {
+        File file = new File(plugin.getDataFolder().getPath()+"/data/TagData.ser");
+        if(file.exists()) {
+            file.delete();
+        }
     }
 }

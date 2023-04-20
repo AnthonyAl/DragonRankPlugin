@@ -1,11 +1,8 @@
 package com.unipi.alexandris.minecraftplugin.dragontagplugin.Handlers;
 
-import com.unipi.alexandris.minecraftplugin.dragontagplugin.Commands.CurrentCmd;
+import com.unipi.alexandris.minecraftplugin.dragontagplugin.Commands.*;
 import com.unipi.alexandris.minecraftplugin.dragontagplugin.Core.Utils;
 import com.unipi.alexandris.minecraftplugin.dragontagplugin.DragonTag;
-import com.unipi.alexandris.minecraftplugin.dragontagplugin.Commands.HelpCmd;
-import com.unipi.alexandris.minecraftplugin.dragontagplugin.Commands.ReloadCmd;
-import com.unipi.alexandris.minecraftplugin.dragontagplugin.Commands.SubCommand;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -26,6 +23,8 @@ public final class CommandsHandler implements TabExecutor {
         commands.put("help", new HelpCmd(this, Utils.prefix));
         commands.put("reload", new ReloadCmd(plugin, Utils.prefix));
         commands.put("current", new CurrentCmd(plugin, Utils.prefix));
+        commands.put("scheduler", new SchedulerCmd(plugin, Utils.prefix));
+        commands.put("reset", new ResetCmd(plugin, Utils.prefix));
     }
 
     @Override

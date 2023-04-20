@@ -37,6 +37,3 @@ borders:
 #accepted effects: strength, speed, haste, jump, regen, resist, fire_resist, water_breath, night_vision, luck, fatigue, weakness, blindness
 effects:
   #example -> luck: 5 -> equals to a luck effect of level 5.
-  luck: 5
-  haste: 2
-  speed: 3

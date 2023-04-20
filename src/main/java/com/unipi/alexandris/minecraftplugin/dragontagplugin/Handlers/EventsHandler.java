@@ -26,26 +26,11 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.unipi.alexandris.minecraftplugin.dragontagplugin.Core.Utils.*;
+
 public final class EventsHandler implements Listener {
 
     private final DragonTag plugin;
-
-    private final TextComponent component_prefix = Component.text("[", NamedTextColor.GOLD)
-            .append(Component.text("Broadcast", NamedTextColor.DARK_RED))
-            .append(Component.text("] ", NamedTextColor.GOLD));
-
-    private final TextComponent component_egg_despawn = component_prefix.append(Component.text("The ", NamedTextColor.RED))
-            .append(Component.text("DRAGON EGG ").color(NamedTextColor.DARK_PURPLE).decoration(TextDecoration.BOLD, true))
-            .append(Component.text("is obtainable in the END!", NamedTextColor.RED));
-
-    private final TextComponent component_lost_natural = component_prefix.append(Component.text("The ", NamedTextColor.RED))
-            .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.DARK_PURPLE).decoration(TextDecoration.BOLD, true))
-            .append(Component.text("has perished! The egg was thus summoned back to the End.", NamedTextColor.RED));
-
-    private final TextComponent component_dropped = component_prefix.append(Component.text("The ", NamedTextColor.RED))
-            .append(Component.text("DRAGON KEEPER ").color(NamedTextColor.DARK_PURPLE).decoration(TextDecoration.BOLD, true))
-            .append(Component.text("has given up the egg! It has returned in the END!", NamedTextColor.RED));
-
 
     public EventsHandler(DragonTag plugin) {
         this.plugin = plugin;
@@ -167,6 +152,7 @@ public final class EventsHandler implements Listener {
 
                 Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component_lost_natural));
 
+                plugin.EGG_SPAWNED = false;
                 Utils.DRAGON_CLEAR(e.getPlayer());
             }
         }
@@ -179,13 +165,14 @@ public final class EventsHandler implements Listener {
 
             Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component_dropped));
 
+            plugin.EGG_SPAWNED = false;
             Utils.DRAGON_CLEAR(e.getPlayer());
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onEnderDragonDeath(EntityDeathEvent e) {
-        if(plugin.getDRAGON() == null && e.getEntity() instanceof EnderDragon && !plugin.config.isEgg_drop() && !plugin.EGG_SPAWNED) {
+        if(e.getEntity() instanceof EnderDragon && !plugin.config.isEgg_drop() && !plugin.EGG_SPAWNED) {
             Location loc = plugin.config.getLocation();
             loc.getBlock().setType(Material.DRAGON_EGG);
             plugin.EGG_SPAWNED = true;
@@ -217,7 +204,8 @@ public final class EventsHandler implements Listener {
                     .append(Component.text("DRAGON KEEPER!").color(NamedTextColor.DARK_PURPLE).decoration(TextDecoration.BOLD, true));
             Bukkit.getServer().getOnlinePlayers().forEach(pl -> pl.sendMessage(component));
 
-            plugin.EGG_SPAWNED = false;
+
+            plugin.EGG_SPAWNED = true;
             Utils.DRAGON_REASSIGN(player);
 
             e.getItem().remove();
@@ -235,26 +223,19 @@ public final class EventsHandler implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onDragonKeeperTravel(PlayerChangedWorldEvent e) {
-        if(e.getPlayer().getUniqueId() == plugin.getDRAGON()) {
-            String world = "OVER WORLD";
+        if(plugin.getDRAGON() != null && e.getPlayer().equals(plugin.getServer().getPlayer(plugin.getDRAGON()))) {
+            String world = e.getPlayer().getWorld().getName();
+            world.toUpperCase().replaceAll("THE", "").replaceAll("__", "_").replaceAll("_", " ");
+            if(e.getPlayer().getWorld().getName().equals("world"))
+                world = "OVER WORLD";
             if(e.getPlayer().getWorld().getName().equals("world_nether"))
                 world = "NETHER DIMENSION";
             if(e.getPlayer().getWorld().getName().equals("world_the_end"))
                 world = "END DIMENSION";
 
-            List<Integer> borders = plugin.config.getBorders();
-            float multiplier = 1;
-            if(e.getPlayer().getWorld().getName().equals("world_nether"))
-                multiplier = 8;
+            double multiplier = e.getPlayer().getWorld().getCoordinateScale();
 
-            String loc = ", over " + Math.round(borders.get(0) / multiplier) + " blocks away from the center!";
-
-            for(int i : borders) {
-                if(e.getPlayer().getLocation().getX() <= i &&
-                        e.getPlayer().getLocation().getZ() <= i)
-                    loc = ", within " + Math.round(i / multiplier) + " blocks away from the center!";
-                else break;
-            }
+            String loc = Utils.calc_coords(e.getPlayer(), multiplier);
             if(!plugin.config.isSpoil_location()) loc = "!";
 
             TextComponent component = component_prefix.append(Component.text("The ", NamedTextColor.RED))

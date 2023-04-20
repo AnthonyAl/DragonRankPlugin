@@ -1,10 +1,13 @@
 package com.unipi.alexandris.minecraftplugin.dragontagplugin.Handlers;
 
 import com.unipi.alexandris.minecraftplugin.dragontagplugin.Core.Config;
+import com.unipi.alexandris.minecraftplugin.dragontagplugin.Core.Utils;
 import com.unipi.alexandris.minecraftplugin.dragontagplugin.DragonTag;
 import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -13,12 +16,14 @@ import java.util.*;
 @SuppressWarnings("unused")
 public final class ConfigHandler {
 
-    private final Config config = new Config();
+    private final Config config;
 
-    private final HashMap<PotionEffectType, Integer> effects = new HashMap<>();
+    private final HashMap<PotionEffectType, Integer> effects;
 
     public ConfigHandler(DragonTag plugin) {
         FileConfiguration fileConfiguration = plugin.getConfig();
+        effects = new HashMap<>();
+        config = new Config();
 
         config.setVoid_protection(fileConfiguration.getBoolean("void_protection"));
         config.setOffline_mode(fileConfiguration.getBoolean("offline_mode"));
@@ -164,10 +169,18 @@ public final class ConfigHandler {
 
         if(plugin.getDRAGON() != null) {
             for(PotionEffectType type : effects.keySet()) {
-                plugin.getServer().getPlayer(plugin.getDRAGON()).removePotionEffect(type);
+                Player p =  plugin.getServer().getPlayer(plugin.getDRAGON());
+                OfflinePlayer op = plugin.getServer().getOfflinePlayer(plugin.getDRAGON());
 
-                if(effects.get(type) > -1)
-                    plugin.getServer().getPlayer(plugin.getDRAGON()).addPotionEffect(new PotionEffect(type, Integer.MAX_VALUE, effects.get(type), false, false));
+                if(p != null) {
+                    p.removePotionEffect(type);
+
+                    if (effects.get(type) > -1)
+                        p.addPotionEffect(new PotionEffect(type, Integer.MAX_VALUE, effects.get(type), false, false));
+                }
+                else if(op != null) {
+                    Utils.schedule_command(op, "assign");
+                }
             }
         }
     }
